@@ -15,9 +15,10 @@ public class Admin extends User {
     public String getRedirectPage() {
         return "AdminDashboard.jsp";
     }
-
+//changes
     // Admin-specific method (abstraction)
     public void performAdminAction() {
         System.out.println("Admin action performed by: " + username);
     }
+
 }
