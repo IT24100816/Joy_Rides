@@ -32,31 +32,38 @@ public class PublicReview {
     }
 
     // Getters and setters
-    public String getReviewId() {
+    public String getReviewId()
+    {
         return reviewId;
     }
 
-    public String getUserAccountName() {
+    public String getUserAccountName()
+    {
         return userAccountName;
     }
 
-    public String getFeedback() {
+    public String getFeedback()
+    {
         return feedback;
     }
 
-    public int getRating() {
+    public int getRating()
+    {
         return rating;
     }
 
-    public String getBikeName() {
+    public String getBikeName()
+    {
         return bikeName;
     }
 
-    public String getImagePath1() {
+    public String getImagePath1()
+    {
         return imagePath1;
     }
 
-    public String getImagePath2() {
+    public String getImagePath2()
+    {
         return imagePath2;
     }
 }
