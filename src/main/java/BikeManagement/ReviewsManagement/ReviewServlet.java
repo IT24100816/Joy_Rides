@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, // 2MB
         maxFileSize = 1024 * 1024 * 10,      // 10MB(Size Validation)
         maxRequestSize = 1024 * 1024 * 50)   // 50MB
+
+
 public class ReviewServlet extends HttpServlet {
     private static final String REVIEWS_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Reviews.txt";
     private static final String UPLOAD_DIR = "uploads";
@@ -104,7 +106,9 @@ public class ReviewServlet extends HttpServlet {
             addReview(review);
             LOGGER.info("Added review for bike: " + bikeName + " by user: " + userAccountName);
             response.sendRedirect("ReviewServlet?bikeName=" + java.net.URLEncoder.encode(bikeName, "UTF-8"));
-        } else if ("edit".equals(action)) {
+        } else if ("edit".equals(action))
+        // Update Review ID Validation
+        {
             if (reviewId == null || reviewId.trim().isEmpty()) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing reviewId parameter");
                 return;
