@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 @WebServlet("/ReviewServlet")
 @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, // 2MB
-        maxFileSize = 1024 * 1024 * 10,      // 10MB
+        maxFileSize = 1024 * 1024 * 10,      // 10MB(Size Validation)
         maxRequestSize = 1024 * 1024 * 50)   // 50MB
 public class ReviewServlet extends HttpServlet {
     private static final String REVIEWS_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Reviews.txt";
