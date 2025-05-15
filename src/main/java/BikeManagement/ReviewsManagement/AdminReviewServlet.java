@@ -64,7 +64,7 @@ public class AdminReviewServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing required parameters");
             return;
         }
-
+//Validation Update
         int rating;
         try {
             rating = Integer.parseInt(ratingStr);
