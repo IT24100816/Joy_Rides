@@ -274,6 +274,7 @@ public class ReviewServlet extends HttpServlet {
                     updatedLines.add(line);
                 }
             }
+            //update review servlet
             if (deleted) {
                 Files.write(Paths.get(REVIEWS_FILE_PATH), updatedLines);
                 LOGGER.info("Total lines after deletion: " + updatedLines.size());
