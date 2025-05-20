@@ -177,7 +177,8 @@
         <% } else { %>
         <form action="JoinQueueServlet" method="POST">
           <input type="hidden" name="bikeName" value="<%= URLEncoder.encode(bikeName, "UTF-8") %>">
-          <button type="submit" class="btn-warning text-white">Join Queue</button>
+          <!--<button type="submit" class="btn-warning text-white">Join Queue</button> -->
+          <p style="color: red;"><b>Bike already Rented!</b></p>
         </form>
         <% } %>
         <a href="ReviewServlet?bikeName=<%= URLEncoder.encode(bikeName, "UTF-8") %>" class="btn-info text-white">Reviews & Feedback</a>
