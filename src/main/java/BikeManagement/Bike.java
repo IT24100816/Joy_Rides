@@ -15,9 +15,23 @@ public class Bike {
         this.availability = availability;
     }
 
-    public String getName() { return name; }
-    public String getPhotoPath() { return photoPath; }
-    public String getPrice() { return price; }
-    public String getOwner() { return owner; }
-    public String getAvailability() { return availability; }
+    public String getName() {
+        return name;
+    }
+
+    public String getPhotoPath() {
+        return photoPath;
+    }
+
+    public String getPrice() {
+        return price;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public String getAvailability() {
+        return availability;
+    }
 }

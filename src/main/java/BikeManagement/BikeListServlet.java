@@ -5,8 +5,6 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.*;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.List;
 
 @WebServlet("/BikeListServlet")
 public class BikeListServlet extends HttpServlet {
@@ -14,22 +12,27 @@ public class BikeListServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<String[]> bikeDataList = new ArrayList<>();
+        // First pass: count valid lines to size the array
+        int lineCount = countValidLines();
+        String[][] bikeDataArray = new String[lineCount][];
+        int index = 0;
 
-        // Read bike data from file
+        // Second pass: read and populate the array
         File file = new File(BIKES_FILE_PATH);
         if (file.exists()) {
-            List<String> lines = Files.readAllLines(Paths.get(BIKES_FILE_PATH));
-            for (String line : lines) {
-                if (line.trim().isEmpty()) continue;
+            try (BufferedReader reader = Files.newBufferedReader(Paths.get(BIKES_FILE_PATH))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.trim().isEmpty()) continue;
 
-                String[] bike = line.trim().split("\\s*\\|\\s*");
-                if (bike.length == 6) {
-                    // Check lastUsed is number, else set to "0"
-                    if (!isNumeric(bike[5])) {
-                        bike[5] = "0";
+                    String[] bike = line.trim().split("\\s*\\|\\s*");
+                    if (bike.length == 6) {
+                        // Check lastUsed is numeric, else set to "0"
+                        if (!isNumeric(bike[5])) {
+                            bike[5] = "0";
+                        }
+                        bikeDataArray[index++] = bike;
                     }
-                    bikeDataList.add(bike);
                 }
             }
         } else {
@@ -37,11 +40,27 @@ public class BikeListServlet extends HttpServlet {
         }
 
         // Sort bikes using Quick Sort
-        quickSort(bikeDataList, 0, bikeDataList.size() - 1);
+        quickSort(bikeDataArray, 0, index - 1);
 
         // Pass data to JSP
-        request.setAttribute("bikeDataList", bikeDataList);
+        request.setAttribute("bikeDataList", bikeDataArray);
         request.getRequestDispatcher("/Bikes.jsp").forward(request, response);
+    }
+
+    // Count valid lines in the file
+    private int countValidLines() throws IOException {
+        int count = 0;
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(BIKES_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                String[] parts = line.trim().split("\\s*\\|\\s*");
+                if (parts.length == 6) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     // Check if string is numeric
@@ -56,7 +75,7 @@ public class BikeListServlet extends HttpServlet {
     }
 
     // Quick Sort
-    private void quickSort(List<String[]> arr, int low, int high) {
+    private void quickSort(String[][] arr, int low, int high) {
         if (low < high) {
             // Find partition index
             int pi = partition(arr, low, high);
@@ -68,32 +87,31 @@ public class BikeListServlet extends HttpServlet {
     }
 
     // Partition method for Quick Sort
-    private int partition(List<String[]> arr, int low, int high) {
-        String[] pivot = arr.get(high);
+    private int partition(String[][] arr, int low, int high) {
+        String[] pivot = arr[high];
         int i = (low - 1); // Index of smaller element
 
         for (int j = low; j < high; j++) {
-            // If current element is smaller than or
-            // equal to pivot
-            if (compareBikes(arr.get(j), pivot) < 0) {
+            // If current element is smaller than or equal to pivot
+            if (compareBikes(arr[j], pivot) < 0) {
                 i++;
 
                 // Swap arr[i] and arr[j]
-                String[] temp = arr.get(i);
-                arr.set(i, arr.get(j));
-                arr.set(j, temp);
+                String[] temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
             }
         }
 
         // Swap arr[i+1] and arr[high] (or pivot)
-        String[] temp = arr.get(i + 1);
-        arr.set(i + 1, arr.get(high));
-        arr.set(high, temp);
+        String[] temp = arr[i + 1];
+        arr[i + 1] = arr[high];
+        arr[high] = temp;
 
         return i + 1;
     }
 
-    // Compare two bikes:
+    // Compare two bikes
     private int compareBikes(String[] bike1, String[] bike2) {
         int avail1 = bike1[4].equalsIgnoreCase("Available") ? 0 : 1;
         int avail2 = bike2[4].equalsIgnoreCase("Available") ? 0 : 1;

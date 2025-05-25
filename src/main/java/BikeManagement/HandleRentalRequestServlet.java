@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 @WebServlet("/HandleRentalRequestServlet")
 public class HandleRentalRequestServlet extends HttpServlet {
     private static final String PAYMENT_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Payment.txt";
+    private static final String CONFIRMED_PAYMENT_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/confirmed_payment.txt";
     private static final String BIKES_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Bikes.txt";
     private final BikeAvailabilityManager bikeAvailabilityManager;
     private static final Logger LOGGER = Logger.getLogger(HandleRentalRequestServlet.class.getName());
@@ -25,7 +26,7 @@ public class HandleRentalRequestServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        LOGGER.info("Processing request in HandleRentalRequestServlet at 08:24 PM +0530, May 13, 2025");
+        LOGGER.info("Processing request in HandleRentalRequestServlet at " + new java.util.Date());
 
         String requestId = request.getParameter("requestId");
         String action = request.getParameter("action");
@@ -35,22 +36,23 @@ public class HandleRentalRequestServlet extends HttpServlet {
         // Log incoming parameters for debugging
         LOGGER.info("Received parameters: requestId=" + requestId + ", action=" + action + ", bikeName=" + bikeName + ", rentalDays=" + rentalDays);
 
-        if (requestId == null || action == null || bikeName == null || rentalDays == null) {
-            LOGGER.warning("Missing required parameters: requestId=" + requestId + ", action=" + action + ", bikeName=" + bikeName + ", rentalDays=" + rentalDays);
+        // Only require requestId, action, and bikeName; rentalDays is optional (only for accept)
+        if (requestId == null || action == null || bikeName == null) {
+            LOGGER.warning("Missing required parameters: requestId=" + requestId + ", action=" + action + ", bikeName=" + bikeName);
             request.setAttribute("errorMessage", "Missing required parameters.");
-            request.getRequestDispatcher("BikeRequests.jsp").forward(request, response);
+            response.sendRedirect("BikeRequests.jsp");
             return;
         }
 
         // Read Payment.txt to find the request
         List<String> paymentLines = new ArrayList<>();
         String renterUsername = null;
+        String fullRequestLine = null;
         boolean requestFound = false;
-        long rentalEndTime = 0;
 
         try {
             LOGGER.info("Reading Payment.txt");
-            paymentLines = Files.readAllLines(Paths.get(PAYMENT_FILE_PATH));
+            paymentLines = new ArrayList<>(Files.readAllLines(Paths.get(PAYMENT_FILE_PATH)));
             for (int i = 0; i < paymentLines.size(); i++) {
                 String line = paymentLines.get(i).trim();
                 if (line.isEmpty()) continue;
@@ -62,41 +64,54 @@ public class HandleRentalRequestServlet extends HttpServlet {
                 if (paymentData[0].equals(requestId)) {
                     requestFound = true;
                     renterUsername = paymentData[2];
+                    fullRequestLine = line; // Store the full line for confirmed_payment.txt
                     if (action.equals("accept")) {
                         LOGGER.info("Accepting rental request for bike: " + bikeName);
+                        if (rentalDays == null) {
+                            LOGGER.severe("Missing rentalDays for accept action");
+                            request.setAttribute("errorMessage", "Rental days are required for accept action.");
+                            response.sendRedirect("BikeRequests.jsp");
+                            return;
+                        }
                         long days;
                         try {
                             days = Long.parseLong(rentalDays.trim());
                         } catch (NumberFormatException e) {
                             LOGGER.severe("Invalid rentalDays format: " + rentalDays);
                             request.setAttribute("errorMessage", "Invalid rental days format.");
-                            request.getRequestDispatcher("BikeRequests.jsp").forward(request, response);
+                            response.sendRedirect("BikeRequests.jsp");
                             return;
                         }
-                        rentalEndTime = System.currentTimeMillis() + (days * 24 * 60 * 60 * 1000);
+                        long rentalEndTime = System.currentTimeMillis() + (days * 24 * 60 * 60 * 1000);
                         bikeAvailabilityManager.updateBikeAvailability(bikeName, "Not Available");
-                        // Update the line with rentalEndTime and status
-                        paymentData[8] = String.valueOf(rentalEndTime); // Update additionalNotes field with rentalEndTime
-                        paymentLines.set(i, String.join(" | ", paymentData));
+                        // Remove the line from paymentLines
+                        paymentLines.remove(i);
+                        // Save to confirmed_payment.txt
+                        saveToConfirmedPayment(fullRequestLine, rentalEndTime);
+                        request.getSession().setAttribute("successMessage", "Bike Rented Successfully!");
+                        request.getSession().setAttribute("renterUsername_" + bikeName, renterUsername);
+                        request.getSession().setAttribute("rentalEndTime_" + bikeName, rentalEndTime);
+                        request.getSession().setAttribute("isRented_" + bikeName, true);
                     } else if (action.equals("reject")) {
                         LOGGER.info("Rejecting rental request for bike: " + bikeName);
-                        paymentLines.remove(i); // Remove the rejected request
-                        i--; // Adjust index after removal
-                        break;
+                        // Remove the line from paymentLines for reject
+                        paymentLines.remove(i);
+                        LOGGER.info("Removed requestId " + requestId + " from paymentLines for reject action");
                     }
+                    break; // Exit loop after processing the request
                 }
             }
         } catch (IOException e) {
-            LOGGER.severe("Failed to process rental request: " + e.getMessage());
-            request.setAttribute("errorMessage", "Failed to process rental request: " + e.getMessage());
-            request.getRequestDispatcher("BikeRequests.jsp").forward(request, response);
+            LOGGER.severe("Failed to read Payment.txt: " + e.getMessage());
+            request.setAttribute("errorMessage", "Failed to read payment records: " + e.getMessage());
+            response.sendRedirect("BikeRequests.jsp");
             return;
         }
 
         if (!requestFound) {
             LOGGER.warning("Rental request not found for requestId: " + requestId);
             request.setAttribute("errorMessage", "Rental request not found.");
-            request.getRequestDispatcher("BikeRequests.jsp").forward(request, response);
+            response.sendRedirect("BikeRequests.jsp");
             return;
         }
 
@@ -107,21 +122,57 @@ public class HandleRentalRequestServlet extends HttpServlet {
                 if (!line.trim().isEmpty()) {
                     writer.write(line);
                     writer.newLine();
+                    LOGGER.info("Written line to Payment.txt: " + line);
                 }
             }
+            LOGGER.info("Successfully updated Payment.txt with " + paymentLines.size() + " lines");
         } catch (IOException e) {
-            LOGGER.severe("Failed to update payment requests: " + e.getMessage());
-            request.setAttribute("errorMessage", "Failed to update payment requests: " + e.getMessage());
-            request.getRequestDispatcher("BikeRequests.jsp").forward(request, response);
+            LOGGER.severe("Failed to update Payment.txt: " + e.getMessage());
+            request.setAttribute("errorMessage", "Failed to update payment records: " + e.getMessage());
+            response.sendRedirect("BikeRequests.jsp");
             return;
         }
 
+        // Verify the file update (optional debug step)
+        List<String> updatedLines = Files.readAllLines(Paths.get(PAYMENT_FILE_PATH));
+        LOGGER.info("Verified Payment.txt contains " + updatedLines.size() + " lines after update");
+
+        // Clear the queue to force reinitialization with updated Payment.txt
+        getServletContext().removeAttribute("rentalRequestQueue");
+
+        // Ensure redirection occurs
         if (action.equals("accept")) {
-            request.getSession().setAttribute("successMessage", "Rental request accepted successfully.");
-            response.sendRedirect("BikeDetailsServlet?bikeName=" + java.net.URLEncoder.encode(bikeName, "UTF-8"));
+            LOGGER.info("Attempting redirect to Bikes.jsp with bikeName: " + bikeName);
+            try {
+                response.sendRedirect("Bikes.jsp?bikeName=" + java.net.URLEncoder.encode(bikeName, "UTF-8"));
+                LOGGER.info("Redirect to Bikes.jsp executed successfully");
+            } catch (Exception e) {
+                LOGGER.severe("Failed to redirect to Bikes.jsp: " + e.getMessage());
+                response.sendRedirect("BikeRequests.jsp?error=RedirectFailed");
+            }
         } else {
-            // Redirect to BikeRequestsServlet to refresh BikeRequests.jsp
+            LOGGER.info("Redirecting to BikeRequestsServlet with bikeName: " + bikeName);
             response.sendRedirect("BikeRequestsServlet?bikeName=" + java.net.URLEncoder.encode(bikeName, "UTF-8"));
+        }
+    }
+
+    private void saveToConfirmedPayment(String requestLine, long rentalEndTime) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(CONFIRMED_PAYMENT_FILE_PATH, true))) {
+            // Split the original request line to modify the additionalNotes field
+            String[] paymentData = requestLine.split("\\s*\\|\\s*");
+            if (paymentData.length != 9) {
+                LOGGER.severe("Invalid payment line format: " + requestLine);
+                return;
+            }
+            // Update the additionalNotes field (index 8) to "Processed,rentalEndTime"
+            paymentData[8] = "Processed," + rentalEndTime;
+            // Reconstruct the line
+            String confirmedLine = String.join(" | ", paymentData);
+            writer.write(confirmedLine);
+            writer.newLine();
+            LOGGER.info("Saved confirmed payment to confirmed_payment.txt: " + confirmedLine);
+        } catch (IOException e) {
+            LOGGER.severe("Failed to save to confirmed_payment.txt: " + e.getMessage());
         }
     }
 }
