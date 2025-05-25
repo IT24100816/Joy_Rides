@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 @WebServlet("/BikeDetailsServlet")
 public class BikeDetailsServlet extends HttpServlet {
-    private static final String BIKES_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Bikes.txt";
+    private static final String BIKES_FILE_PATH = "C:\\\\Users\\\\Samsung\\\\OneDrive\\\\Desktop\\\\Joy_Rides\\\\src\\\\main\\\\resources\\\\Bikes.txt";
     private static final Logger LOGGER = Logger.getLogger(BikeDetailsServlet.class.getName());
 
     @Override
