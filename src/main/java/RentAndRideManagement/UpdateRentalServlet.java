@@ -86,6 +86,7 @@ public class UpdateRentalServlet extends HttpServlet {
                             lines.set(i, newLine);
                             System.out.println("UpdateRentalServlet: Updated line to: " + newLine);
                             updated = true;
+                            session.setAttribute("successMessage", "Rental updated successfully!");
                             break;
                         }
                     } else {
@@ -98,18 +99,15 @@ public class UpdateRentalServlet extends HttpServlet {
             if (!updated) {
                 System.out.println("UpdateRentalServlet: No matching record found for bikeName: " + bikeName +
                         ", username: " + username + ", orderNumber: " + orderNumber);
+                session.setAttribute("errorMessage", "No matching rental record found.");
             } else {
                 // Write back to file
-                try {
-                    Files.write(Paths.get(RENTAL_REQUESTS_FILE), lines);
-                    System.out.println("UpdateRentalServlet: File write successful for " + RENTAL_REQUESTS_FILE);
-                } catch (IOException e) {
-                    System.out.println("UpdateRentalServlet: Write failed: " + e.getMessage());
-                    throw new ServletException("Failed to write to RentalRequests.txt", e);
-                }
+                Files.write(Paths.get(RENTAL_REQUESTS_FILE), lines);
+                System.out.println("UpdateRentalServlet: File write successful for " + RENTAL_REQUESTS_FILE);
             }
         } catch (IOException e) {
             System.out.println("UpdateRentalServlet: Error reading RentalRequests.txt: " + e.getMessage());
+            session.setAttribute("errorMessage", "Failed to update rental details: " + e.getMessage());
             throw new ServletException("Failed to read RentalRequests.txt", e);
         }
 

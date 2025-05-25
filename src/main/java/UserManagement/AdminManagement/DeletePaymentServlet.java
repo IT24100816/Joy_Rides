@@ -1,6 +1,8 @@
 package UserManagement.AdminManagement;
 
 import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -13,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/DeletePaymentServlet")
 public class DeletePaymentServlet extends HttpServlet {
-    private static final String PAYMENT_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Payment.txt";
+    private static final String CONFIRMED_PAYMENT_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/confirmed_payment.txt";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -30,25 +32,25 @@ public class DeletePaymentServlet extends HttpServlet {
         }
 
         // Verify file exists and is writable
-        File file = new File(PAYMENT_FILE_PATH);
+        File file = new File(CONFIRMED_PAYMENT_FILE_PATH);
         if (!file.exists()) {
-            System.out.println("DeletePaymentServlet: Error - Payment.txt does not exist at: " + PAYMENT_FILE_PATH);
-            request.setAttribute("errorMessage", "Payment.txt does not exist at: " + PAYMENT_FILE_PATH);
+            System.out.println("DeletePaymentServlet: Error - confirmed_payment.txt does not exist at: " + CONFIRMED_PAYMENT_FILE_PATH);
+            request.setAttribute("errorMessage", "confirmed_payment.txt does not exist at: " + CONFIRMED_PAYMENT_FILE_PATH);
             request.getRequestDispatcher("/PaymentDetails.jsp").forward(request, response);
             return;
         }
         if (!file.canWrite()) {
-            System.out.println("DeletePaymentServlet: Error - Cannot write to Payment.txt at: " + PAYMENT_FILE_PATH);
-            request.setAttribute("errorMessage", "Cannot write to Payment.txt at: " + PAYMENT_FILE_PATH);
+            System.out.println("DeletePaymentServlet: Error - Cannot write to confirmed_payment.txt at: " + CONFIRMED_PAYMENT_FILE_PATH);
+            request.setAttribute("errorMessage", "Cannot write to confirmed_payment.txt at: " + CONFIRMED_PAYMENT_FILE_PATH);
             request.getRequestDispatcher("/PaymentDetails.jsp").forward(request, response);
             return;
         }
 
-        // Read all lines from Payment.txt
+        // Read all lines from confirmed_payment.txt
         List<String> lines = new ArrayList<>();
         boolean found = false;
         try {
-            lines = Files.readAllLines(Paths.get(PAYMENT_FILE_PATH));
+            lines = Files.readAllLines(Paths.get(CONFIRMED_PAYMENT_FILE_PATH));
             System.out.println("DeletePaymentServlet: Total lines read: " + lines.size());
             for (int i = 0; i < lines.size(); i++) {
                 String line = lines.get(i);
@@ -59,9 +61,9 @@ public class DeletePaymentServlet extends HttpServlet {
 
                 String[] parts = line.split(" \\| ");
                 if (parts.length >= 9) {
-                    String currentOrderNumber = parts[0].trim(); // Order Number is the first part without label
+                    String currentOrderNumber = parts[0].trim();
                     System.out.println("DeletePaymentServlet: Checking line " + i + " with orderNumber: " + currentOrderNumber);
-                    if (currentOrderNumber.equals(orderNumber)) {
+                    if (currentOrderNumber.equalsIgnoreCase(orderNumber)) {
                         lines.remove(i); // Remove the matching line
                         found = true;
                         System.out.println("DeletePaymentServlet: Removed line with orderNumber: " + orderNumber);
@@ -72,8 +74,8 @@ public class DeletePaymentServlet extends HttpServlet {
                 }
             }
         } catch (IOException e) {
-            System.out.println("DeletePaymentServlet: Error reading Payment.txt: " + e.getMessage());
-            request.setAttribute("errorMessage", "Error reading Payment.txt: " + e.getMessage());
+            System.out.println("DeletePaymentServlet: Error reading confirmed_payment.txt: " + e.getMessage());
+            request.setAttribute("errorMessage", "Error reading confirmed_payment.txt: " + e.getMessage());
             request.getRequestDispatcher("/PaymentDetails.jsp").forward(request, response);
             return;
         }
@@ -85,19 +87,19 @@ public class DeletePaymentServlet extends HttpServlet {
             return;
         }
 
-        // Write the updated lines back to Payment.txt
+        // Write the updated lines back to confirmed_payment.txt
         try {
-            Files.write(Paths.get(PAYMENT_FILE_PATH), lines);
-            System.out.println("DeletePaymentServlet: Successfully wrote updated content to Payment.txt");
+            Files.write(Paths.get(CONFIRMED_PAYMENT_FILE_PATH), lines);
+            System.out.println("DeletePaymentServlet: Successfully wrote updated content to confirmed_payment.txt");
         } catch (IOException e) {
-            System.out.println("DeletePaymentServlet: Error writing to Payment.txt: " + e.getMessage());
-            request.setAttribute("errorMessage", "Error writing to Payment.txt: " + e.getMessage());
+            System.out.println("DeletePaymentServlet: Error writing to confirmed_payment.txt: " + e.getMessage());
+            request.setAttribute("errorMessage", "Error writing to confirmed_payment.txt: " + e.getMessage());
             request.getRequestDispatcher("/PaymentDetails.jsp").forward(request, response);
             return;
         }
 
-        // Redirect to PaymentDetails.jsp to refresh the table
-        System.out.println("DeletePaymentServlet: Redirecting to PaymentDetails.jsp");
-        response.sendRedirect("PaymentDetails.jsp");
+        // Redirect to PaymentDetails.jsp with a success parameter
+        System.out.println("DeletePaymentServlet: Redirecting to PaymentDetails.jsp with deleted=true");
+        response.sendRedirect("PaymentDetails.jsp?deleted=true&orderNumber=" + URLEncoder.encode(orderNumber, StandardCharsets.UTF_8));
     }
 }

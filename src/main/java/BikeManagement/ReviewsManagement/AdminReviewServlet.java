@@ -16,7 +16,7 @@ import java.io.IOException;
         maxFileSize = 1024 * 1024 * 10,      // 10MB
         maxRequestSize = 1024 * 1024 * 50)   // 50MB
 public class AdminReviewServlet extends HttpServlet {
-    private static final String REVIEWS_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Reviews.txt";
+    private static final String REVIEWS_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Joy_Rides/src/main/resources/Reviews.txt";
     private static final String UPLOAD_DIR = "uploads";
 
     @Override

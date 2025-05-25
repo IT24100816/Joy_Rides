@@ -82,3 +82,4 @@ public class DeleteRentalRequestServlet extends HttpServlet {
         response.sendRedirect("RentDetails.jsp");
     }
 }
+

@@ -57,3 +57,4 @@ public class PromoteServlet extends HttpServlet {
         response.sendRedirect("AdminManagement.jsp?successMessage=User '" + username + "' has been promoted to an admin successfully!");
     }
 }
+
