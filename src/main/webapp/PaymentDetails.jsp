@@ -105,6 +105,16 @@
       text-align: center;
       display: ${param.deleted == 'true' ? 'block' : 'none'};
     }
+    .error-message {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      text-align: center;
+      display: ${not empty param.errorMessage ? 'block' : 'none'};
+    }
   </style>
 </head>
 <body>
@@ -148,30 +158,38 @@
   <c:if test="${param.deleted == 'true'}">
     <div class="success-message">Payment record deleted successfully!</div>
   </c:if>
+  <c:if test="${not empty param.errorMessage}">
+    <div class="error-message">${param.errorMessage}</div>
+  </c:if>
 
   <h2 class="text-3xl font-bold mb-6">Payment Records</h2>
 
   <%
-    String PAYMENT_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Payment.txt";
+    String CONFIRMED_PAYMENT_FILE_PATH = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/confirmed_payment.txt";
+    String deletedOrderNumber = request.getParameter("orderNumber");
 
     // List to store payment details
     List<String[]> payments = new ArrayList<>();
-    try (BufferedReader paymentReader = new BufferedReader(new FileReader(PAYMENT_FILE_PATH))) {
+    try (BufferedReader paymentReader = new BufferedReader(new FileReader(CONFIRMED_PAYMENT_FILE_PATH))) {
       String line;
       while ((line = paymentReader.readLine()) != null) {
         if (line.trim().isEmpty()) continue;
         String[] parts = line.split(" \\| ");
         if (parts.length >= 9) {
+          String currentOrderNumber = parts[0].trim();
+          if (deletedOrderNumber != null && currentOrderNumber.equals(deletedOrderNumber)) {
+            continue; // Skip the deleted record if it matches
+          }
           payments.add(new String[]{
                   parts[0].trim(), // Order Number
                   parts[1].trim(), // Bike Name
                   parts[2].trim(), // User Name
                   parts[3].trim(), // Email
-                  parts[4].trim(), // Status
-                  parts[5].trim(), // Rental Days
-                  parts[6].trim(), // Total Amount
-                  parts[7].trim()  // Additional Services
-                  // parts[8] (Payment Slip) is skipped for now
+                  parts[4].trim(), // Rental Days
+                  parts[5].trim(), // Total Amount
+                  parts[6].trim(), // Additional Services
+                  parts[7].trim()  // Payment Slip
+                  // parts[8] (Rental End Time) is not displayed
           });
         } else {
   %>
@@ -195,10 +213,10 @@
         <th>Bike Name</th>
         <th>User Name</th>
         <th>Email</th>
-        <th>Status</th>
         <th>Rental Days</th>
         <th>Total Amount</th>
         <th>Additional Services</th>
+        <th>Payment Slip</th>
         <th>Actions</th>
       </tr>
       </thead>

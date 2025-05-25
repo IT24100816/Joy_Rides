@@ -150,21 +150,34 @@
             Extend Rental: <%= bikeName %>
         </div>
         <%
-            String paymentFilePath = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Payment.txt";
+            String confirmedPaymentFilePath = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/confirmed_payment.txt";
             String rentalRequestFilePath = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/RentalRequests.txt";
             double currentTotalPayment = 0.0;
             String orderNumber = "N/A";
             String currentRentalDays = "1";
             String currentServices = "";
-            boolean rentalFound = false;
 
             try {
-                // Fetch order number, rental days, and additional services from RentalRequests.txt
+                // Fetch current total payment from confirmed_payment.txt
+                List<String> paymentLines = Files.readAllLines(Paths.get(confirmedPaymentFilePath));
+                for (String line : paymentLines) {
+                    if (line.trim().isEmpty()) continue;
+                    String[] paymentData = line.split("\\s*\\|\\s*");
+                    if (paymentData.length == 9 && paymentData[1].trim().equals(bikeName) && paymentData[2].trim().equals(username)) {
+                        try {
+                            currentTotalPayment = Double.parseDouble(paymentData[5].trim().replaceAll("[^0-9.]", ""));
+                            orderNumber = paymentData[0].trim(); // Order number is the first field
+                        } catch (NumberFormatException e) {
+                            currentTotalPayment = 0.0;
+                        }
+                        break;
+                    }
+                }
+
+                // Fetch rental days and additional services from RentalRequests.txt
                 List<String> rentalLines = Files.readAllLines(Paths.get(rentalRequestFilePath));
                 for (String line : rentalLines) {
-                    if (line.trim().isEmpty()) {
-                        continue;
-                    }
+                    if (line.trim().isEmpty()) continue;
                     String[] parts = line.split("\\s*\\|\\s*");
                     if (parts.length == 5) {
                         String[] bikePart = parts[0].split("\\s*:\\s*");
@@ -176,47 +189,17 @@
                         if (bikePart.length == 2 && usernamePart.length == 2 && orderPart.length == 2 && daysPart.length == 2 && servicesPart.length == 2) {
                             String currentBikeName = bikePart[1].trim();
                             String currentUsername = usernamePart[1].trim();
-                            orderNumber = orderPart[1].trim();
+                            String currentOrderNumber = orderPart[1].trim();
                             currentRentalDays = daysPart[1].trim();
                             currentServices = servicesPart[1].trim();
 
-                            if (currentBikeName.equals(bikeName) && currentUsername.equals(username)) {
-                                rentalFound = true;
+                            if (currentBikeName.equals(bikeName) && currentUsername.equals(username) && currentOrderNumber.equals(orderNumber)) {
                                 break;
                             }
                         }
                     }
                 }
-
-                if (!rentalFound) {
-        %>
-        <div class="alert alert-danger" role="alert">
-            No matching rental request found for bike <%= bikeName %> and username <%= username %>.
-        </div>
-        <%
-                return;
-            }
-
-            // Fetch current total payment from Payment.txt
-            List<String> paymentLines = Files.readAllLines(Paths.get(paymentFilePath));
-            for (String line : paymentLines) {
-                if (line.trim().isEmpty()) {
-                    continue;
-                }
-                String[] paymentData = line.split("\\s*\\|\\s*");
-                if (paymentData.length == 9) {
-                    if (paymentData[1].trim().equals(bikeName) &&
-                            paymentData[2].trim().equals(username)) {
-                        try {
-                            currentTotalPayment = Double.parseDouble(paymentData[5].trim().replaceAll("[^0-9.]", ""));
-                        } catch (NumberFormatException e) {
-                            currentTotalPayment = 0.0;
-                        }
-                        break;
-                    }
-                }
-            }
-        } catch (IOException e) {
+            } catch (IOException e) {
         %>
         <div class="alert alert-danger" role="alert">
             Error reading rental or payment data: <%= e.getMessage() %>

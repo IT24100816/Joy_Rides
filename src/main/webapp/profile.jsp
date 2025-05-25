@@ -49,15 +49,16 @@
     String username = (String) session.getAttribute("username");
     if (username != null) {
       String bikesFilePath = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Bikes.txt";
-      String paymentFilePath = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/Payment.txt";
+      String paymentFilePath = "/Users/samadhithjayasena/Library/CloudStorage/OneDrive-SriLankaInstituteofInformationTechnology/IntelliJ IDEA/Website/src/main/resources/confirmed_payment.txt";
       List<String> paymentLines = null;
       try {
         paymentLines = Files.readAllLines(Paths.get(paymentFilePath));
       } catch (Exception e) {
-        request.setAttribute("errorMessage", "Error reading Payment.txt: " + e.getMessage());
+        request.setAttribute("errorMessage", "Error reading confirmed_payment.txt: " + e.getMessage());
       }
       boolean hasRentedBikes = false;
   %>
+  <!-- Display Error/Success Messages -->
   <%
     String errorMessage = (String) request.getAttribute("errorMessage");
     String successMessage = (String) request.getAttribute("successMessage");
@@ -89,25 +90,30 @@
       </thead>
       <tbody>
       <%
-        // Check Payment.txt for rented bikes
         if (paymentLines != null) {
           for (String paymentLine : paymentLines) {
             if (paymentLine.trim().isEmpty()) continue;
             String[] paymentData = paymentLine.split("\\s*\\|\\s*");
-            if (paymentData.length != 9) continue;
+            if (paymentData.length != 9) {
+              System.out.println("Skipping malformed line in confirmed_payment.txt: " + paymentLine);
+              continue;
+            }
             String paymentUsername = paymentData[2].trim();
             String bikeName = paymentData[1].trim();
             String rentalDays = paymentData[4].trim();
             String totalPayment = paymentData[5].trim();
             String additionalServicesStr = paymentData[6].trim();
-            String rentalEndTimeStr = paymentData[8].trim();
+            String additionalNotes = paymentData[8].trim();
 
-            // Check if this rental belongs to the current user and has been accepted (rentalEndTime is a timestamp)
-            if (paymentUsername.equals(username) && rentalEndTimeStr.matches("\\d+")) {
+            if (paymentUsername.equals(username) && additionalNotes.startsWith("Processed")) {
               hasRentedBikes = true;
-              Long rentalEndTime = Long.parseLong(rentalEndTimeStr);
+              String[] notesParts = additionalNotes.split(",");
+              if (notesParts.length != 2 || !notesParts[1].matches("\\d+")) {
+                System.out.println("Invalid additionalNotes format for bike " + bikeName + ": " + additionalNotes);
+                continue;
+              }
+              Long rentalEndTime = Long.parseLong(notesParts[1]);
 
-              // Fetch bike details from Bikes.txt
               String photoPath = "default.jpg";
               double pricePerHour = 0.0;
               try {

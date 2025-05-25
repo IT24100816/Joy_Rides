@@ -36,13 +36,13 @@
             </div>
             <script>
                 setTimeout(function() {
-                    window.location.href = "index.jsp";
+                    window.location.href = "profile.jsp"; // Redirect to profile.jsp instead of index.jsp
                 }, 3000);
             </script>
             <%
             } else {
             %>
-            <form action="UpdatePaymentServlet" method="POST" enctype="multipart/form-data">
+            <form action="UpdatePaymentServlet" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
                 <input type="hidden" name="bikeName" value="<%= request.getAttribute("bikeName") != null ? request.getAttribute("bikeName") : "" %>">
                 <input type="hidden" name="currentTotalPayment" value="<%= request.getAttribute("currentTotalPayment") != null ? request.getAttribute("currentTotalPayment") : "0.0" %>">
                 <input type="hidden" name="updatedTotalPayment" value="<%= request.getAttribute("updatedTotalPayment") != null ? request.getAttribute("updatedTotalPayment") : "0.0" %>">
@@ -97,5 +97,15 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function validateForm() {
+        const fileInput = document.getElementById('bankSlip');
+        if (!fileInput.value) {
+            alert("Please select a bank slip image to upload.");
+            return false;
+        }
+        return true;
+    }
+</script>
 </body>
 </html>

@@ -1,5 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.util.List" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -192,9 +191,9 @@
 
     <!-- Debug Information -->
     <%
-        List<String[]> bikeDataList = (List<String[]>) request.getAttribute("bikeDataList");
+        String[][] bikeDataArray = (String[][]) request.getAttribute("bikeDataList");
     %>
-    <p class="text-gray-600 mb-4">Total bikes loaded: <%= bikeDataList != null ? bikeDataList.size() : 0 %></p>
+    <p class="text-gray-600 mb-4">Total bikes loaded: <%= bikeDataArray != null ? bikeDataArray.length : 0 %></p>
 
     <!-- Add Bike Modal (Only accessible if logged in) -->
     <div class="modal fade" id="addBikeModal" tabindex="-1" aria-labelledby="addBikeModalLabel" aria-hidden="true">
@@ -249,8 +248,9 @@
     <div class="bike-listings">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <%
-                if (bikeDataList != null && !bikeDataList.isEmpty()) {
-                    for (String[] bikeData : bikeDataList) {
+                if (bikeDataArray != null && bikeDataArray.length > 0) {
+                    for (int i = 0; i < bikeDataArray.length; i++) {
+                        String[] bikeData = bikeDataArray[i];
             %>
             <div class="bg-white shadow-lg rounded-lg overflow-hidden flex flex-col card">
                 <div class="h-60 overflow-hidden">
@@ -327,7 +327,7 @@
         <div class="text-center md:text-right mt-6 md:mt-0">
             <p>© 2025 JOY-RIDE. All rights reserved.</p>
             <ul class="mt-4 space-y-2">
-                <!--<li><a href="Review.jsp" class="hover:underline">Reviews</a></li>  -->
+                <li><a href="AllReviews.jsp" class="hover:underline">Reviews</a></li>
             </ul>
         </div>
     </div>
